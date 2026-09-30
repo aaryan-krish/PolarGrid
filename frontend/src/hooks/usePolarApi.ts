@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Status, Forecast, Schedule, Autonomy, Alert, Comparison, Load } from '../types';
-import * as mockData from '../api/mock';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 const WS_URL = API_URL.replace(/^http/, 'ws') + '/ws/live';
 
 interface ApiState {
@@ -15,21 +13,19 @@ interface ApiState {
   comparison: Comparison | null;
   loads: Load[] | null;
   isConnected: boolean;
-  isMock: boolean;
   error: string | null;
 }
 
 export function usePolarApi() {
   const [state, setState] = useState<ApiState>({
-    status: USE_MOCK ? mockData.mockStatus : null,
-    forecast: USE_MOCK ? mockData.mockForecast : null,
-    schedule: USE_MOCK ? mockData.mockSchedule : null,
-    autonomy: USE_MOCK ? mockData.mockAutonomy : null,
-    alerts: USE_MOCK ? mockData.mockAlerts : null,
-    comparison: USE_MOCK ? mockData.mockComparison : null,
-    loads: USE_MOCK ? mockData.mockLoads : null,
+    status: null,
+    forecast: null,
+    schedule: null,
+    autonomy: null,
+    alerts: null,
+    comparison: null,
+    loads: null,
     isConnected: false,
-    isMock: USE_MOCK,
     error: null,
   });
 
@@ -37,7 +33,6 @@ export function usePolarApi() {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchRestData = useCallback(async () => {
-    if (USE_MOCK) return;
     try {
       const [forecastRes, scheduleRes, autonomyRes, alertsRes, comparisonRes, loadsRes] = await Promise.all([
         fetch(`${API_URL}/api/forecast?hours=48`),
@@ -68,27 +63,17 @@ export function usePolarApi() {
         comparison,
         loads,
         error: null,
-        isMock: false
       }));
     } catch (err) {
-      console.error("REST fetch failed, falling back to mock", err);
+      console.error("REST fetch failed:", err);
       setState(prev => ({
         ...prev,
-        forecast: mockData.mockForecast,
-        schedule: mockData.mockSchedule,
-        autonomy: mockData.mockAutonomy,
-        alerts: mockData.mockAlerts,
-        comparison: mockData.mockComparison,
-        loads: mockData.mockLoads,
-        error: "Failed to fetch data, using mock data.",
-        isMock: true
+        error: "Failed to connect to backend server.",
       }));
     }
   }, []);
 
   const connectWs = useCallback(() => {
-    if (USE_MOCK) return;
-    
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
     const ws = new WebSocket(WS_URL);
@@ -135,14 +120,6 @@ export function usePolarApi() {
   }, [fetchRestData, connectWs]);
 
   const toggleLoad = async (id: string, enabled: boolean) => {
-    if (state.isMock) {
-      setState(prev => ({
-        ...prev,
-        loads: prev.loads?.map(l => l.id === id ? { ...l, enabled } : l) || null
-      }));
-      return;
-    }
-    
     try {
       const res = await fetch(`${API_URL}/api/loads/${id}/toggle`, {
         method: 'POST',
@@ -162,14 +139,6 @@ export function usePolarApi() {
   };
 
   const setMode = async (mode: "AI" | "BASELINE" | "SAFE") => {
-    if (state.isMock) {
-      setState(prev => ({
-        ...prev,
-        status: prev.status ? { ...prev.status, mode } : null
-      }));
-      return;
-    }
-
     try {
       const res = await fetch(`${API_URL}/api/mode`, {
         method: 'POST',

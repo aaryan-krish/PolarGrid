@@ -49,18 +49,13 @@ function Sidebar() {
   );
 }
 
-function Layout({ children, isMock }: { children: React.ReactNode, isMock: boolean }) {
+function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen bg-icy-dark text-slate-200 overflow-hidden">
       <Sidebar />
       <main className="flex-1 flex flex-col h-screen overflow-y-auto relative">
         <header className="h-16 border-b border-slate-800 flex items-center justify-between px-8 bg-slate-900/50 backdrop-blur sticky top-0 z-10">
           <h2 className="text-xl font-semibold">Dashboard</h2>
-          {isMock && (
-            <div className="px-3 py-1 text-xs font-semibold bg-accent-orange/20 text-accent-orange rounded-full border border-accent-orange/50">
-              Demo Data Mode
-            </div>
-          )}
         </header>
         <div className="p-8 flex-1">
           {children}
@@ -73,13 +68,13 @@ function Layout({ children, isMock }: { children: React.ReactNode, isMock: boole
 export default function App() {
   const api = usePolarApi();
 
-  if (api.error && !api.isMock) {
-    return <div className="flex items-center justify-center h-screen">Error connecting to server.</div>;
+  if (api.error) {
+    return <div className="flex items-center justify-center h-screen text-red-400 font-bold">{api.error}</div>;
   }
 
   return (
     <BrowserRouter>
-      <Layout isMock={api.isMock}>
+      <Layout>
         <Routes>
           <Route path="/" element={<Overview api={api} />} />
           <Route path="/forecasts" element={<Forecasts api={api} />} />

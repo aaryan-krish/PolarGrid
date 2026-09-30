@@ -10,3 +10,5 @@ highspy
 pytest
 httpx
 websockets
+motor
+python-dotenv

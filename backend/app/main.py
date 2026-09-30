@@ -8,6 +8,20 @@ import json
 import os
 import sys
 
+from dotenv import load_dotenv
+load_dotenv()
+MONGODB_URI = os.getenv("MONGODB_URI")
+
+from motor.motor_asyncio import AsyncIOMotorClient
+db = None
+if MONGODB_URI and "<username>" not in MONGODB_URI:
+    try:
+        client = AsyncIOMotorClient(MONGODB_URI)
+        db = client.polargrid_database
+        print("✅ Configured MongoDB Telemetry Connection!")
+    except Exception as e:
+        print("❌ MongoDB connection error:", e)
+
 # Import custom modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.state import state
@@ -336,6 +350,16 @@ async def simulation_loop():
                 "baseline_fuel_l": state.baseline_fuel_l,
                 "ai_fuel_l": state.ai_fuel_l
             })
+            
+        # MongoDB Telemetry Save
+        if db is not None:
+            telemetry_doc = get_status()
+            asyncio.create_task(db.telemetry.insert_one(telemetry_doc))
+            
+            # Also save any new alerts
+            if state.alerts:
+                # We can just update or insert them. For simplicity, save the latest alerts state.
+                asyncio.create_task(db.alerts.replace_one({"_id": "latest_alerts"}, {"alerts": state.alerts}, upsert=True))
             
         state.sim_hour += 1
 
