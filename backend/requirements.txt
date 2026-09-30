@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+pandas
+numpy
+lightgbm
+scikit-learn
+joblib
+pyomo
+highspy
+pytest
+httpx
+websockets

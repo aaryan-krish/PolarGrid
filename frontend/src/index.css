@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --color-icy-blue: #a0c4ff;
+  --color-icy-dark: #0a192f;
+  --color-icy-light: #e6f0ff;
+  --color-accent-orange: #ff8c42;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-icy-dark);
+    color: var(--color-slate-200);
+  }
+}
